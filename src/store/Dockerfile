@@ -15,4 +15,6 @@ RUN mkdir -p /app/logs && chown -R app:app /app
 COPY --from=build --chown=app:app /workspace/src/store/build/libs/*.jar ./app.jar
 USER app
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
+# sh -c + exec: подстановка JAVA_OPTS и корректная доставка SIGTERM
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
