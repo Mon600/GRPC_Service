@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+import "validate.proto";
+import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
+option java_package = "app.generated";
+option java_outer_classname = "AuthProto";
+
+
+service AuthService {
+  rpc Register (RegisterRequest) returns (TokenResponse);
+
+  rpc Login (LoginRequest) returns (TokenResponse);
+
+  rpc ChangePassword (ChangePasswordRequest) returns (TokenResponse);
+
+  rpc ResetPassword (ResetPasswordRequest) returns (ResetPasswordResponse);
+
+  rpc ValidateToken (google.protobuf.Empty) returns (isValidTokenResponse);
+}
+
+message ChangePasswordRequest {
+  string old_password = 2 [
+                          (buf.validate.field).string.min_len = 8,
+                          (buf.validate.field).string.max_len = 255
+                          ];
+  string new_password = 3 [
+                          (buf.validate.field).string.min_len = 8,
+                          (buf.validate.field).string.max_len = 255,
+                          (buf.validate.field).cel = {
+                            id: "password.has_digit",
+                            message: "Password must contain at least one digit",
+                            expression: "this.matches('[0-9]')"
+                          },
+                          (buf.validate.field).cel = {
+                            id: "password.has_letter",
+                            message: "Password must contain at least one letter",
+                            expression: "this.matches('[A-Za-z]')"
+                          }
+                          ];
+}
+
+message LoginRequest {
+  string email = 1 [(buf.validate.field).string.email = true];
+  string password = 2 [
+                     (buf.validate.field).string.min_len = 8,
+                     (buf.validate.field).string.max_len = 255];
+}
+
+message RegisterRequest {
+  string email = 1 [(buf.validate.field).string.email = true];
+  string name = 2 [(buf.validate.field).string.min_len = 2, (buf.validate.field).string.max_len = 255];
+  string surname = 3 [(buf.validate.field).string.min_len = 2, (buf.validate.field).string.max_len = 255];
+  string number = 4 [(buf.validate.field).string.pattern = "^\\+[1-9]\\d{1,14}$"];
+  string password = 5 [
+                        (buf.validate.field).string.min_len = 8,
+                        (buf.validate.field).string.max_len = 255,
+                        (buf.validate.field).cel = {
+                          id: "password.has_digit",
+                          message: "Password must contain at least one digit",
+                          expression: "this.matches('[0-9]')"
+                        },
+                        (buf.validate.field).cel = {
+                          id: "password.has_letter",
+                          message: "Password must contain at least one letter",
+                          expression: "this.matches('[A-Za-z]')"
+                        }
+                      ];
+}
+
+message ResetPasswordRequest {
+  string email = 1 [(buf.validate.field).string.email = true];
+}
+
+message TokenResponse {
+  string token = 1;
+  string token_type = 2;
+}
+
+message ResetPasswordResponse {
+  string message = 1;
+}
+
+message isValidTokenResponse {
+    bool isValid = 1;
+}
